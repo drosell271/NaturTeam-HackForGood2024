@@ -1,11 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import uuid
-from .app.models import User, Event
+from create_db import User, Event
 
 app = FastAPI()
 
@@ -55,7 +55,7 @@ async def login(form_data: JSON_Login):
         raise HTTPException(status_code=404, detail="User not found")
 
     # Check if the password is correct
-    if not verify_password(form_data.password, user.hashed_password):
+    if form_data.password == user.password:
         raise HTTPException(status_code=400, detail="Incorrect password")
 
     # If the password is correct, generate and return a short token
