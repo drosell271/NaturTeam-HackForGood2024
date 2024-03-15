@@ -10,7 +10,6 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    created_events = relationship("Event", back_populates="creator")
 
 class Event(Base):
     __tablename__ = "events"
@@ -20,7 +19,7 @@ class Event(Base):
     image = Column(String, nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    creator_id = Column(Integer, ForeignKey('users.id'))
     created_at = Column(DateTime, nullable=False)
     users_attending = Column(Integer)
     finished = Column(Boolean, nullable=False, default=False)
