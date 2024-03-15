@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 import uuid
+from .app.models import User, Event
 
 app = FastAPI()
 
@@ -40,10 +43,14 @@ async def generate_short_token():
 
 token_user_mapping = {}
 
+engine = create_engine('sqlite:///app/db/local.db')
+Session = sessionmaker(bind=engine)
+session = Session()
+
 @app.post("/login")
-async def login(form_data: JSON_Login, db: Session = Depends(get_db)):
+async def login(form_data: JSON_Login):
     # Verify if the user exists in the database
-    user = db.query(User).filter(User.username == form_data.username).first()
+    user = session.query(User).filter(User.username == form_data.username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
