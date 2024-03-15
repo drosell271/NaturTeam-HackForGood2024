@@ -35,7 +35,23 @@ class JSON_Login(BaseModel):
 	username: str
 	password: str
 
+async def generate_short_token():
+    return str(uuid.uuid4())[:10]
+
+token_user_mapping = {}
 
 @app.post("/login")
-async def login(json: JSON_Login):
-	pass
+async def login(form_data: JSON_Login, db: Session = Depends(get_db)):
+    # Verify if the user exists in the database
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the password is correct
+    if not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+
+    # If the password is correct, generate and return a short token
+    token = await generate_short_token()
+    token_user_mapping[token] = user.id  # Store the token with the user's ID
+    return {"access_token": token}
