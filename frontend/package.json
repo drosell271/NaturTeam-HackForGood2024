@@ -9,21 +9,30 @@
     "web": "expo start --web"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@react-native-async-storage/async-storage": "^1.22.3",
     "@react-native-community/masked-view": "^0.1.11",
     "@react-navigation/native": "^6.1.16",
     "@react-navigation/stack": "^6.3.28",
+=======
+    "@react-navigation/bottom-tabs": "^6.5.19",
+>>>>>>> origin/lista_eventos
     "expo": "~50.0.13",
     "expo-camera": "^14.1.1",
     "expo-status-bar": "~1.11.1",
     "react": "18.2.0",
     "react-native": "0.73.5",
+<<<<<<< HEAD
     "react-native-camera": "^4.2.1",
     "react-native-gesture-handler": "~2.14.0",
     "react-native-maps": "1.10.0",
     "react-native-reanimated": "^3.8.1",
     "react-native-safe-area-context": "^4.9.0",
     "react-native-screens": "^3.29.0"
+=======
+    "react-native-nav": "^2.0.2",
+    "react-native-vector-icons": "^10.0.3"
+>>>>>>> origin/lista_eventos
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
