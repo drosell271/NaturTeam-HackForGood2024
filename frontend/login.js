@@ -19,7 +19,7 @@ export default function LoginForm(props) {
 	const [password, setPassword] = useState("");
 
 	const authenticate = async () => {
-		const url = "http://127.0.0.1:8000/login";
+		const url = "http://192.168.69.33:8000/login";
 		const payload = {
 			username,
 			password,
