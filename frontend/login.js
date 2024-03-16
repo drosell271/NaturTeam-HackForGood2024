@@ -19,15 +19,6 @@ export default function LoginForm(props) {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 
-	const saveToken = async (token) => {
-		try {
-			await AsyncStorage.setItem("accessToken", token);
-			console.log("Token guardado con éxito");
-		} catch (error) {
-			console.error("Error al guardar el token:", error);
-		}
-	};
-
 	const authenticate = async () => {
 		const url = "http://192.168.69.33:8000/login";
 		const payload = {
@@ -43,7 +34,6 @@ export default function LoginForm(props) {
 				body: JSON.stringify(payload),
 			});
 
-			console.log(response);
 			if (!response.ok) {
 				alert(`Usuario o contraseña incorrectos.`);
 				return;
@@ -51,8 +41,6 @@ export default function LoginForm(props) {
 
 			props.navigation.navigate("Transition");
 			const data = await response.json();
-			console.log(data);
-			saveToken(data.accessToken);
 			console.log("Logged in:", data.message);
 		} catch (error) {
 			console.error("Error al realizar la llamada API", error);
