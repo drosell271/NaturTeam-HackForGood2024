@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import create_engine, update
 from sqlalchemy.orm import sessionmaker
+from fastapi.middleware.cors import CORSMiddleware
 import uuid
 from .create_db import User, Event, user_event_association
 from fastapi.responses import FileResponse
@@ -13,6 +14,14 @@ from reportlab.lib.colors import black, blue
 import os
 
 app = FastAPI()
+
+app.add_middleware(
+	CORSMiddleware,
+	allow_origins=["*"],  # Permite las solicitudes desde el puerto 3000
+	allow_credentials=True,
+	allow_methods=["*"],  # Permite todos los métodos
+	allow_headers=["*"],  # Permite todos los encabezados
+)
 
 class JSON_Event_Input(BaseModel):
 	name: str
