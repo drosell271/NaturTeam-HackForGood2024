@@ -38,7 +38,16 @@ Frontend
 ```bash
   $ npm i
   $ npm start
-``` 
+```
+## Imagenes
+![Alt text](https://github.com/drosell271/NaturTeam-HackForGood2024/blob/main/img/login.jpeg?raw=true)
+![Alt text](https://github.com/drosell271/NaturTeam-HackForGood2024/blob/main/img/mapa.jpeg?raw=true)
+![Alt text](https://github.com/drosell271/NaturTeam-HackForGood2024/blob/main/img/signup.jpeg?raw=true)
+![Alt text](https://github.com/drosell271/NaturTeam-HackForGood2024/blob/main/img/transition.jpeg?raw=true)
+![Alt text](https://github.com/drosell271/NaturTeam-HackForGood2024/blob/main/img/img1.jpeg)
+![Alt text](https://github.com/drosell271/NaturTeam-HackForGood2024/blob/main/img/img2.jpeg)
+
+
 ## Authors ✏️
 
 - Tono Villarejo [@srtonno](https://github.com/SrTonno)
