@@ -5,7 +5,7 @@ El propósito del proyecto es disminuir la cantidad de basura en los parajes nat
 
 
 
-## Tech Stack 👨‍👩‍💻
+## Tech Stack 💻
 
 **DDBB:** SQLlite
 
@@ -23,6 +23,7 @@ Vercions
 - python3 -> 3.12
 - node -> v20.11.1
 - npm -> 10.2.4
+
 Clone https://github.com/drosell271/NaturTeam-HackForGood2024
 
 Backend
