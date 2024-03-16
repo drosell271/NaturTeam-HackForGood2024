@@ -11,9 +11,9 @@ const PictureTaken = ({ route, navigation }) => {
     navigation.navigate("Transition");
   };
 
-  const handleNext = () => {
-    // Navega de regreso a la pantalla anterior para tomar otra foto
-    navigation.navigate("Map");
+  const handleNext = (uri) => {
+    console.log(uri)
+    navigation.navigate('Formulario');
   };
 
   return (
@@ -21,7 +21,7 @@ const PictureTaken = ({ route, navigation }) => {
       <Image source={{ uri: imageUri }} style={styles.image} />
       <View style={styles.buttonContainer}>
         <Button title="Borrar" onPress={handleDelete} />
-        <Button title="Siguiente" onPress={handleNext} />
+        <Button title="Siguiente" onPress={() => handleNext()} />
       </View>
     </View>
   );
