@@ -6,6 +6,11 @@ from sqlalchemy import create_engine, update
 from sqlalchemy.orm import sessionmaker
 import uuid
 from .create_db import User, Event, user_event_association
+from fastapi.responses import FileResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.colors import black, blue
+import os
 
 app = FastAPI()
 
@@ -314,3 +319,50 @@ async def attend_event(token: str, event_id: int, user: int):
 	else:
 		return {"message": "Registro no encontrado."}
 
+
+@app.get('/generate/certificates/token={token}')
+async def generate_certificates(token: str):
+	if token not in token_user_mapping:
+		raise HTTPException(status_code=404, detail="Token not found")
+	user_id = token_user_mapping[token]
+	user = session.query(User).filter(User.id == user_id).first()
+	if not user:
+		raise HTTPException(status_code=404, detail="User not found")
+	events = user.events_attended
+	return {"message": f"User {user.username} has attended {len(events)} events."}
+
+@app.get('/certificado/token={token}')
+async def generar_y_descargar_certificado(token: str):
+	if token not in token_user_mapping:
+		raise HTTPException(status_code=404, detail="Token not found")
+	user_id = token_user_mapping[token]
+	user = session.query(User).filter(User.id == user_id).first()
+	if not user:
+		raise HTTPException(status_code=404, detail="User not found")
+
+	pdf_path = "certificado_reconocimiento.pdf"
+	
+	c = canvas.Canvas(pdf_path, pagesize=letter)
+	c.setFillColor(black)
+
+	c.setFont("Helvetica-Bold", 20)
+	c.drawCentredString(300, 700, "NaturTeam")
+	c.setFont("Helvetica-Bold", 12)
+	c.drawCentredString(300, 680, "Certificado de actividad voluntaria")
+	c.setFont("Helvetica", 12)
+	texto_reconocimiento = f"HACE CONSTAR SU RECONOCIMIENTO\n\nA {user.username},\n\nPOR SU LABOR Y COMPROMISO CON\nLA ECOLOGÍA Y EL RESPETO AL MEDIOAMBIENTE.\nCON UN TOTAL DE {user.hours} HORAS DE ACTIVIDAD VOLUNTARIA.\n\nFIRMADO POR EL EQUIPO DE NATURTEAM"
+	c.drawCentredString(300, 600, texto_reconocimiento)
+	c.setFillColor(blue)
+	c.setFont("Helvetica-Bold", 12)
+	c.drawString(100, 150, f"Fecha: {datetime.now().strftime('%d/%m/%Y')}")
+	c.drawString(100, 100, "Firmado el equipo de NaturTeam")
+	c.line(150, 95, 300, 95)
+	
+	c.save()
+	
+	# Verifica si el PDF existe
+	if not os.path.exists(pdf_path):
+		raise HTTPException(status_code=500, detail="Error creating PDF.")
+	
+	# Envía el PDF como respuesta para que el usuario pueda descargarlo
+	return FileResponse(path=pdf_path, filename=pdf_path, media_type='application/pdf')
