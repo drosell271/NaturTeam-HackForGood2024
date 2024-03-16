@@ -329,49 +329,93 @@ async def attend_event(token: str, event_id: int, user: int):
 		return {"message": "Registro no encontrado."}
 
 
-@app.get('/generate/certificates/token={token}')
-async def generate_certificates(token: str):
-	if token not in token_user_mapping:
-		raise HTTPException(status_code=404, detail="Token not found")
-	user_id = token_user_mapping[token]
-	user = session.query(User).filter(User.id == user_id).first()
-	if not user:
-		raise HTTPException(status_code=404, detail="User not found")
-	events = user.events_attended
-	return {"message": f"User {user.username} has attended {len(events)} events."}
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.colors import black, blue, green, HexColor
+from reportlab.pdfgen import canvas
+from datetime import datetime
+from fastapi.responses import FileResponse
+from fastapi import HTTPException
+import os
 
 @app.get('/certificado/token={token}')
 async def generar_y_descargar_certificado(token: str):
-	if token not in token_user_mapping:
-		raise HTTPException(status_code=404, detail="Token not found")
-	user_id = token_user_mapping[token]
-	user = session.query(User).filter(User.id == user_id).first()
-	if not user:
-		raise HTTPException(status_code=404, detail="User not found")
+    if token not in token_user_mapping:
+        raise HTTPException(status_code=404, detail="Token not found")
+    user_id = token_user_mapping[token]
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-	pdf_path = "certificado_reconocimiento.pdf"
-	
-	c = canvas.Canvas(pdf_path, pagesize=letter)
-	c.setFillColor(black)
+    pdf_path = "certificado_reconocimiento.pdf"
 
-	c.setFont("Helvetica-Bold", 20)
-	c.drawCentredString(300, 700, "NaturTeam")
-	c.setFont("Helvetica-Bold", 12)
-	c.drawCentredString(300, 680, "Certificado de actividad voluntaria")
-	c.setFont("Helvetica", 12)
-	texto_reconocimiento = f"HACE CONSTAR SU RECONOCIMIENTO\n\nA {user.username},\n\nPOR SU LABOR Y COMPROMISO CON\nLA ECOLOGÍA Y EL RESPETO AL MEDIOAMBIENTE.\nCON UN TOTAL DE {user.hours} HORAS DE ACTIVIDAD VOLUNTARIA.\n\nFIRMADO POR EL EQUIPO DE NATURTEAM"
-	c.drawCentredString(300, 600, texto_reconocimiento)
-	c.setFillColor(blue)
-	c.setFont("Helvetica-Bold", 12)
-	c.drawString(100, 150, f"Fecha: {datetime.now().strftime('%d/%m/%Y')}")
-	c.drawString(100, 100, "Firmado el equipo de NaturTeam")
-	c.line(150, 95, 300, 95)
-	
-	c.save()
-	
-	# Verifica si el PDF existe
-	if not os.path.exists(pdf_path):
-		raise HTTPException(status_code=500, detail="Error creating PDF.")
-	
-	# Envía el PDF como respuesta para que el usuario pueda descargarlo
-	return FileResponse(path=pdf_path, filename=pdf_path, media_type='application/pdf')
+    # Rotar la página 90 grados
+    c = canvas.Canvas(pdf_path, pagesize=(letter[1], letter[0]))
+    
+	# Establecer el color de fondo
+    c.setFillColor(HexColor("#ccffcc"))  # Color verde claro
+    c.rect(0, 0, letter[1], letter[0], fill=1)
+
+    # Establecer el color de la fuente
+    c.setFillColor(black)
+
+    # Añadir título y logo
+    title = "Naturteam"
+    logo_path = "app/db/logo.jpg"  # Ruta de tu archivo de imagen del logo
+
+    # Ajustar el tamaño y la posición del título
+    title_font_size = 24
+    title_width = c.stringWidth(title, "Helvetica-Bold", title_font_size)
+    title_start_x = (letter[1] - title_width) / 2
+    title_start_y = 700
+
+    # Añadir el título centrado horizontalmente
+    c.setFont("Helvetica-Bold", title_font_size)
+    c.drawString(title_start_x, title_start_y, title)
+
+    # Añadir el logo al lado del título
+    logo_width = 100
+    logo_height = 100
+    logo_start_x = title_start_x + title_width + 20
+    logo_start_y = title_start_y - (logo_height / 2)
+    c.drawImage(logo_path, logo_start_x, logo_start_y, width=logo_width, height=logo_height)
+
+    # Añadir el texto
+    text_start_x = 50
+    text_start_y = 500
+    line_height = 14
+    lines = [
+        "",
+        "                             NaturTeam",
+        "",
+        "",
+        "",
+        "",
+        f"Hace constar su reconocimiento a {user.username} por su labor",
+        "",
+        " y compromiso con la ecología y el respeto al medio ambiente.",
+        "",
+        f"con un total de {user.hours} horas de actividad voluntaria.",
+        "",
+    ]
+
+    for line in lines:
+        c.drawString(text_start_x, text_start_y, line)
+        text_start_y -= line_height
+
+    # Añadir la fecha y firma
+    c.setFillColor(blue)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(100, 150, f"Fecha: {datetime.now().strftime('%d/%m/%Y')}")
+    c.drawString(100, 100, "Firmado el equipo de NaturTeam")
+    c.line(150, 95, 300, 95)
+
+    c.save()
+
+    # Verifica si el PDF existe
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=500, detail="Error creating PDF.")
+
+    # Envía el PDF como respuesta para que el usuario pueda descargarlo
+    return FileResponse(path=pdf_path, filename=pdf_path, media_type='application/pdf')
+
+
