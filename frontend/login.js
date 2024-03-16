@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
 	Alert,
 	Button,
@@ -18,14 +19,21 @@ export default function LoginForm(props) {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 
+	const saveToken = async (token) => {
+		try {
+			await AsyncStorage.setItem("accessToken", token);
+			console.log("Token guardado con éxito");
+		} catch (error) {
+			console.error("Error al guardar el token:", error);
+		}
+	};
+
 	const authenticate = async () => {
 		const url = "http://192.168.69.33:8000/login";
 		const payload = {
 			username,
 			password,
 		};
-		console.log("Username", username);
-		console.log("Payload:", payload, "URL:", url);
 		try {
 			const response = await fetch(url, {
 				method: "POST",
@@ -43,8 +51,8 @@ export default function LoginForm(props) {
 
 			props.navigation.navigate("Transition");
 			const data = await response.json();
-			setAccessToken(data.access_token); // Guarda el token en el estado del componente
-			localStorage.setItem("accessToken", data.access_token); // También guarda el token en el almacenamiento local
+			console.log(data);
+			saveToken(data.accessToken);
 			console.log("Logged in:", data.message);
 		} catch (error) {
 			console.error("Error al realizar la llamada API", error);
