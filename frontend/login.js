@@ -25,6 +25,7 @@ export default function LoginForm(props) {
 			username,
 			password,
 		};
+		console.log("Payload:", payload);
 		try {
 			const response = await fetch(url, {
 				method: "POST",
@@ -33,7 +34,7 @@ export default function LoginForm(props) {
 				},
 				body: JSON.stringify(payload),
 			});
-
+			console.log("Response:", response);
 			if (!response.ok) {
 				alert(`Usuario o contraseña incorrectos.`);
 				return;
@@ -41,6 +42,7 @@ export default function LoginForm(props) {
 
 			props.navigation.navigate("Transition");
 			const data = await response.json();
+			const token = await data.token;
 			console.log("Logged in:", data.message);
 		} catch (error) {
 			console.error("Error al realizar la llamada API", error);

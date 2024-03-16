@@ -6,7 +6,7 @@ export const MARKERS_DATA = [];
 const fetchData = async () => {
 	try {
 		const response = await fetch(
-			`http://192.168.69.33:8000/event/get/coordinates/token=7fd6e3bb-0`
+			`http://192.168.69.33:8000/event/get/coordinates/token=436e2214-7`
 		);
 		if (!response.ok) {
 			throw new Error("Respuesta de la red no fue ok");
