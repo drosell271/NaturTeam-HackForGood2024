@@ -2,10 +2,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, update
 from sqlalchemy.orm import sessionmaker
 import uuid
-from .create_db import User, Event
+from .create_db import User, Event, user_event_association
 
 app = FastAPI()
 
@@ -30,6 +30,7 @@ class JSON_Event_Output(BaseModel):
 	created_at: datetime
 	cleaning_at: Optional[datetime] = None
 	finished: bool
+	attendees_count: int
 
 class JSON_Event_GPS(BaseModel):
 	id: int
@@ -43,6 +44,8 @@ class JSON_Login(BaseModel):
 class My_Events(BaseModel):
 	created_by_me: List[JSON_Event_Output]
 	attended_by_me: List[JSON_Event_Output]
+	history: List[JSON_Event_Output]
+	hours: int
 	
 
 
@@ -54,6 +57,8 @@ token_user_mapping = {}
 engine = create_engine('sqlite:///app/db/local.db')
 Session = sessionmaker(bind=engine)
 session = Session()
+
+
 
 @app.post("/register")
 async def register(form_data: JSON_Login):
@@ -85,6 +90,8 @@ async def logout(token: str):
 		raise HTTPException(status_code=404, detail="Token not found")
 	del token_user_mapping[token]
 	return {"message": "Logged out"}
+
+
 
 @app.post('/event/create/token={token}')
 async def create_event(token: str, form_data: JSON_Event_Input):
@@ -142,8 +149,9 @@ async def get_all_events(token: str):
 			creator_id=event.creator_id,
 			created_at=event.created_at,
 			cleaning_at=event.cleaning_at,
-			finished=event.finished
-		) for event in events
+			finished=event.finished,
+			attendees_count=event.attendees_count
+		) for event in events  if not event.finished
 	]
 
 @app.get('/event/get/coordinates/token={token}', response_model=List[JSON_Event_GPS])
@@ -152,7 +160,7 @@ async def get_all_events(token: str):
 		raise HTTPException(status_code=404, detail="Token not found")
 	user_id = token_user_mapping[token]
 	events = session.query(Event).all()
-	return [JSON_Event_GPS(id=event.id, latitude=event.latitude, longitude=event.longitude) for event in events]
+	return [JSON_Event_GPS(id=event.id, latitude=event.latitude, longitude=event.longitude) for event in events if not event.finished]
 
 @app.get('/event/get/id={event_id}/token={token}', response_model=JSON_Event_Output)
 async def get_event(token: str, event_id: int):
@@ -173,54 +181,75 @@ async def get_event(token: str, event_id: int):
 			creator_id=event.creator_id,
 			created_at=event.created_at,
 			cleaning_at=event.cleaning_at,
-			finished=event.finished
+			finished=event.finished,
+			attendees_count=event.attendees_count
 		)
 
 @app.get('/event/get/my-events/token={token}', response_model=My_Events)
 async def get_my_events(token: str):
-    if token not in token_user_mapping:
-        raise HTTPException(status_code=404, detail="Token not found")
+	if token not in token_user_mapping:
+		raise HTTPException(status_code=404, detail="Token not found")
 
-    user_id = token_user_mapping[token]
-    user = session.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+	user_id = token_user_mapping[token]
+	user = session.query(User).filter(User.id == user_id).first()
+	if not user:
+		raise HTTPException(status_code=404, detail="User not found")
 
-    created_by_me = session.query(Event).filter(Event.creator_id == user_id).all()
-    attended_by_me = user.events_attended
+	created_by_me = session.query(Event).filter(Event.creator_id == user_id).all()
+	attended_by_me = user.events_attended
 
-    return My_Events(
-        created_by_me=[
-            JSON_Event_Output(
-                id=event.id,
-                name=event.name,
-                description=event.description,
-                image=event.image,
-                estimated=event.estimated,
-                latitude=event.latitude,
-                longitude=event.longitude,
-                creator_id=event.creator_id,
-                created_at=event.created_at,
-                cleaning_at=event.cleaning_at,
-                finished=event.finished
-            ) for event in created_by_me
-        ],
-        attended_by_me=[
-            JSON_Event_Output(
-                id=event.id,
-                name=event.name,
-                description=event.description,
-                image=event.image,
-                estimated=event.estimated,
-                latitude=event.latitude,
-                longitude=event.longitude,
-                creator_id=event.creator_id,
-                created_at=event.created_at,
-                cleaning_at=event.cleaning_at,
-                finished=event.finished
-            ) for event in attended_by_me
-        ]
-    )
+
+	return My_Events(
+		created_by_me=[
+			JSON_Event_Output(
+				id=event.id,
+				name=event.name,
+				description=event.description,
+				image=event.image,
+				estimated=event.estimated,
+				latitude=event.latitude,
+				longitude=event.longitude,
+				creator_id=event.creator_id,
+				created_at=event.created_at,
+				cleaning_at=event.cleaning_at,
+				finished=event.finished,
+				attendees_count=event.attendees_count
+			) for event in created_by_me
+		],
+		attended_by_me=[
+			JSON_Event_Output(
+				id=event.id,
+				name=event.name,
+				description=event.description,
+				image=event.image,
+				estimated=event.estimated,
+				latitude=event.latitude,
+				longitude=event.longitude,
+				creator_id=event.creator_id,
+				created_at=event.created_at,
+				cleaning_at=event.cleaning_at,
+				finished=event.finished,
+				attendees_count=event.attendees_count
+			) for event in attended_by_me if not event.finished
+		],
+		history=[
+			JSON_Event_Output(
+				id=event.id,
+				name=event.name,
+				description=event.description,
+				image=event.image,
+				estimated=event.estimated,
+				latitude=event.latitude,
+				longitude=event.longitude,
+				creator_id=event.creator_id,
+				created_at=event.created_at,
+				cleaning_at=event.cleaning_at,
+				finished=event.finished,
+				attendees_count=event.attendees_count
+			) for event in attended_by_me if event.finished
+		],
+		hours=user.hours
+	)
 
 
 @app.post('/event/change-attend/event_id={event_id}/token={token}')
@@ -236,10 +265,11 @@ async def attend_event(token: str, event_id: int):
 
 	if user in event.attendees:
 		event.attendees.remove(user)
+		event.attendees_count -= 1
 		action_message = "You are no longer attending this event."
 	else:
-		# El usuario no está asistiendo al evento, lo añadimos a la lista de asistentes
 		event.attendees.append(user)
+		event.attendees_count += 1
 		action_message = "You are now attending this event."
 
 	session.commit()
@@ -256,3 +286,31 @@ async def finish_event(token: str, event_id: int):
 	event.finished = True
 	session.commit()
 	return {"message": "Event finished"}
+
+@app.post('/event/attend/event_id={event_id}/user={user}/token={token}')
+async def attend_event(token: str, event_id: int, user: int):
+	if token not in token_user_mapping:
+		raise HTTPException(status_code=404, detail="Token not found")
+	user_id = token_user_mapping[token]
+	event = session.query(Event).filter(Event.id == event_id).first()
+	if not event:
+		raise HTTPException(status_code=404, detail="Event not found")
+	if user_id != event.creator_id:
+		raise HTTPException(status_code=400, detail="You are not the creator of this event")
+	user = session.query(User).filter(User.id == user).first()
+	if not user:
+		raise HTTPException(status_code=404, detail="User not found")
+	
+	registro = session.query(user_event_association).filter_by(user_id=user_id, event_id=event_id).first()
+	if registro:
+		stmt = update(user_event_association).where(
+			user_event_association.c.user_id == user_id,
+			user_event_association.c.event_id == event_id
+		).values(atended=True)
+		user.hours += event.estimated
+		session.execute(stmt)
+		session.commit()
+		return {"message": "Registro actualizado."}
+	else:
+		return {"message": "Registro no encontrado."}
+
